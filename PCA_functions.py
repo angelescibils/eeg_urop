@@ -69,7 +69,7 @@ def get_eeg_features(eeg_data, sampling_frequency=sf, epoch_sec=eps):
 def save_features(data_dict, saving_folder, animal_id, session_id):
     for key, df in data_dict.items():
         # Generate a filename for each DataFrame based on its key
-        filename = bids_naming(saving_folder, animal_id, session_id, f'features_{key}.csv')
+        filename = uts.bids_naming(saving_folder, animal_id, session_id, f'features_{key}.csv.gz')
         df.to_csv(filename, index=False)
         console.success(f"Wrote {key} feature data to {filename}")
 
@@ -104,7 +104,6 @@ def get_animal_features(animal_folder, sampling_frequency=sf, epoch_sec=eps):
 
         
 ################## PCA OF REFERENCE EEG ################## 
-## passing the entire dictionary will be slower than just the ref_electrode dataframe
 ## To Improve: don't pass entire dictionary, just ref_electrode dataframe (should improve time + space) 
 def get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=pca_n):
     '''
