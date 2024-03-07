@@ -69,7 +69,7 @@ def get_eeg_features(eeg_data, sampling_frequency=sf, epoch_sec=eps):
 def save_features(data_dict, saving_folder, animal_id, session_id):
     for key, df in data_dict.items():
         # Generate a filename for each DataFrame based on its key
-        filename = uts.bids_naming(saving_folder, animal_id, session_id, f'features_{key}.csv.gz')
+        filename = uts.bids_naming(saving_folder, animal_id, session_id, f'chann-{key}_features.csv.gz')
         df.to_csv(filename, index=False)
         console.success(f"Wrote {key} feature data to {filename}")
 
