@@ -66,16 +66,46 @@ def get_eeg_features(eeg_data, sampling_frequency=sf, epoch_sec=eps):
 
     return df_dict 
 
-def save_predictions(data_dict, saving_folder, animal_id, session_id):
-    
+def save_features(data_dict, saving_folder, animal_id, session_id):
     for key, df in data_dict.items():
         # Generate a filename for each DataFrame based on its key
-        filename = bids_naming(saving_folder, animal_id, session_id, f'{key}.csv')
+        filename = bids_naming(saving_folder, animal_id, session_id, f'features_{key}.csv')
         df.to_csv(filename, index=False)
-        console.success(f"Wrote {key} data to {filename}")
+        console.success(f"Wrote {key} feature data to {filename}")
 
+
+def get_animal_features(animal_folder, sampling_frequency=sf, epoch_sec=eps):
+    '''
+    Assuming BIDS convention
+    Create new folder called "features" where features are saved 
+    '''
+    ## Getting Animal ID
+    animal_id = os.path.basename(animal_folder)
+
+    #### When running this on my computer, I had to change the file extensions to just .csv (pandas couldn't read the .csv.gz for the eeg files, but it could for the sleep files)
+    #### Assuming we're creating a new "features" folder within each session
+    for eeg_file_path in glob.glob(f'{animal_folder}/*/eeg/*.csv.gz', recursive=True):
+
+        ## Getting Session Path & Info
+        session_folder_path = os.path.dirname(os.path.dirname(eeg_file_path))
+        session_id = os.path.basename(session_folder_path)
+
+        ## Creating Features folder
+        feature_folder_path = os.path.join(session_folder_path, 'features')
+        if not os.path.exists(feature_folder_path):
+            os.makedirs(feature_folder_path)
+
+        ## Get Features for this session for this animal
+        eeg_data = pd.read_csv(eeg_file_path)
+        df_dict = get_eeg_features(eeg_data, sf, eps)
+
+        ## Save Features 
+        save_features(df_dict, feature_folder_path, animal_id, session_id)
+
+        
 ################## PCA OF REFERENCE EEG ################## 
-
+## passing the entire dictionary will be slower than just the ref_electrode dataframe
+## To Improve: don't pass entire dictionary, just ref_electrode dataframe (should improve time + space) 
 def get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=pca_n):
     '''
     Extract PCA of reference electrode
@@ -116,7 +146,7 @@ def get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=pca_n):
 
 ################## APPLY PCA TO OTHER EEG & VISUALIZE ################## 
 # Transform the other EEG feature dataframes with reference channel's PCA
-def apply_PCA(eeg_feature_dict, ref_pca, n_components):
+def apply_PCA(eeg_feature_dict, ref_pca, n_components=pca_n):
     '''
     Applies reference electrode's PCA to the other electrode's features matrices
 
@@ -160,6 +190,11 @@ def apply_PCA(eeg_feature_dict, ref_pca, n_components):
 
 ################## VISUALIZE PCA ################## 
 # Visualize the PCA of the EEG features 
+## To improve
+    ## Add limits as parameters of function
+    ## Add second figure with bar
+    ## Add title options (mention ref electrode/animal and against who)
+
 def plot2D(dict_pca_df, sleep_df, title):
     '''
     Plots PC1 vs. PC2 of each electrode 
@@ -208,6 +243,8 @@ def plot2D(dict_pca_df, sleep_df, title):
     plt.show()
 
 
+### THIS IS CODE FROM PREDICT.PY
+### Idea: do something similar so that PCA is just run in same file? 
 
 # if __name__ == '__main__':
 #   parser = argparse.ArgumentParser()
