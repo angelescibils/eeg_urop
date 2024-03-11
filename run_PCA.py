@@ -60,41 +60,6 @@ for animal_folder in all_animal_folders:
     ref_title = f'{animal_id} {first_session_id} EEG8'
     pcaf.apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=3, xlim=[-20, 30], ylim=[-30, 50])
 
-### Extract features of one animal with multiple sessions 
-### This can be turned into a function, there is a lot of place for improvement and error detection here! 
-# all_session_ids = os.listdir(animal_folder)
-
-# for session_id in all_session_ids:
-
-#     ## Add other measures to ensure the session
-#     if session_id == 'rec' or session_id == 'start': continue 
-
-#    # Going into Features Folder
-#     features_folder = os.path.join(animal_folder, session_id, 'features')
-#     features_files = os.listdir(features_folder)
-
-#     sleep_folder = os.path.join(animal_folder, session_id, 'sleep')
-#     sleep_file = os.listdir(sleep_folder)[0] 
-#     sleep_file_path = os.path.join(sleep_folder, sleep_file)
-       
-#     ## Initializing Variables 
-#     i = 0 
-#     eeg_data = dict()
-
-#     ## Going through Each Channel Feature (Assuming they're organized by EEG1-EEG9)
-#     for file in features_files:
-#             i +=1
-#             eeg_data[f'EEG{i}'] = pd.read_csv(os.path.join(features_folder, file))
-#             if i ==9: break 
-
-#     variance, ref_pca = get_PCA(eeg_data, ref_electrode='EEG8', n_components=3)
-#     dict_pca_df = apply_PCA(eeg_data, ref_pca,  n_components=3)
-#     # print(f'{session} has variance of {variance}')
-
-#     sleep_df = pd.read_csv(sleep_file_path)
-#     plot2D(dict_pca_df, sleep_df, f'MLA152 {session_id} with MLA154 EEG8')
-
-
 
 ##################################################################
 ################## LOAD FEATURE & SLEEP DF DATA ################## 
