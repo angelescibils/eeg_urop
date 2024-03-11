@@ -195,7 +195,7 @@ def apply_PCA(eeg_feature_dict, ref_pca, n_components=pca_n):
     ## Add second figure with bar
     ## Add title options (mention ref electrode/animal and against who)
 
-def plot2D(dict_pca_df, sleep_df, title, xlim=[-20, 30], ylim=[-30, 50]):
+def plot2D(animal_folder, dict_pca_df, sleep_df, title, xlim=[-20, 30], ylim=[-30, 50]):
     '''
     Plots PC1 vs. PC2 of each electrode 
 
@@ -239,7 +239,7 @@ def plot2D(dict_pca_df, sleep_df, title, xlim=[-20, 30], ylim=[-30, 50]):
     plt.suptitle(f'{title} PCA', fontsize=16, fontweight='bold')
 #     subtitle = f'Scatter Plot of PC1 vs PC2 with Sleep Stage Classification'
     plt.tight_layout()
-    plt.savefig(f'{title}_PCA.png',  dpi=300)
+    plt.savefig(f'{animal_folder}/{title}_PCA.png',  dpi=300)
     plt.show()
 
 
@@ -281,7 +281,7 @@ def apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=pca_n, xlim=[-
 
                 ## Visualizing 
                 plot_title = f'{animal_id} {session_id} with ref {ref_title}'
-                plot2D(dict_pca_df, sleep_df, plot_title, xlim, ylim)
+                plot2D(animal_folder, dict_pca_df, sleep_df, plot_title, xlim, ylim)
 
 
 ### THIS IS CODE FROM PREDICT.PY
