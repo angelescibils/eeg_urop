@@ -1,4 +1,5 @@
 ################## IMPORTS ################## 
+from xml.sax.handler import feature_namespace_prefixes
 import numpy as np 
 import mne
 from mne.io import RawArray
@@ -33,43 +34,65 @@ for animal_folder in all_animal_folders:
     get_animal_features(animal_folder, sampling_frequency=100, epoch_sec=2.5) 
 
 
+
 ##################################################################
 ########################### APPPLY PCA ###########################
 ##################################################################
 
+for animal_folder in all_animal_folders:
+
+    animal_id = os.path.basename(animal_folder)
+
+    ## Assuming Ref_Electrode to be EEG8 of the first session 
+    eeg_feature_dict = dict()
+    first_session_id = os.listdir(animal_folder)[0]
+    path_to_features = os.path.join(animal_folder, first_session_id, 'features')
+    feature_files = os.listdir(path_to_features)
+    
+    for file in feature_files:
+        if 'EEG8' in file:
+            eeg_feature_dict['EEG8'] = pd.read_csv(os.path.join(path_to_features, file))
+
+
+    var, ref_pca = get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=3)
+    
+    ## Apply PCA to all other electrodes of the animal 
+    ref_title = f'{animal_id} {first_session_id} EEG8'
+    apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=3, xlim=[-20, 30], ylim=[-30, 50])
+
 ### Extract features of one animal with multiple sessions 
 ### This can be turned into a function, there is a lot of place for improvement and error detection here! 
-all_session_ids = os.listdir(animal_folder)
+# all_session_ids = os.listdir(animal_folder)
 
-for session_id in all_session_ids:
+# for session_id in all_session_ids:
 
-    ## Add other measures to ensure the session
-    if session_id == 'rec' or session_id == 'start': continue 
+#     ## Add other measures to ensure the session
+#     if session_id == 'rec' or session_id == 'start': continue 
 
-   # Going into Features Folder
-    features_folder = os.path.join(animal_folder, session_id, 'features')
-    features_files = os.listdir(features_folder)
+#    # Going into Features Folder
+#     features_folder = os.path.join(animal_folder, session_id, 'features')
+#     features_files = os.listdir(features_folder)
 
-    sleep_folder = os.path.join(animal_folder, session_id, 'sleep')
-    sleep_file = os.listdir(sleep_folder)[0] 
-    sleep_file_path = os.path.join(sleep_folder, sleep_file)
+#     sleep_folder = os.path.join(animal_folder, session_id, 'sleep')
+#     sleep_file = os.listdir(sleep_folder)[0] 
+#     sleep_file_path = os.path.join(sleep_folder, sleep_file)
        
-    ## Initializing Variables 
-    i = 0 
-    eeg_data = dict()
+#     ## Initializing Variables 
+#     i = 0 
+#     eeg_data = dict()
 
-    ## Going through Each Channel Feature (Assuming they're organized by EEG1-EEG9)
-    for file in features_files:
-            i +=1
-            eeg_data[f'EEG{i}'] = pd.read_csv(os.path.join(features_folder, file))
-            if i ==9: break 
+#     ## Going through Each Channel Feature (Assuming they're organized by EEG1-EEG9)
+#     for file in features_files:
+#             i +=1
+#             eeg_data[f'EEG{i}'] = pd.read_csv(os.path.join(features_folder, file))
+#             if i ==9: break 
 
-    variance, ref_pca = get_PCA(eeg_data, ref_electrode='EEG8', n_components=3)
-    dict_pca_df = apply_PCA(eeg_data, ref_pca,  n_components=3)
-    # print(f'{session} has variance of {variance}')
+#     variance, ref_pca = get_PCA(eeg_data, ref_electrode='EEG8', n_components=3)
+#     dict_pca_df = apply_PCA(eeg_data, ref_pca,  n_components=3)
+#     # print(f'{session} has variance of {variance}')
 
-    sleep_df = pd.read_csv(sleep_file_path)
-    plot2D(dict_pca_df, sleep_df, f'MLA152 {session_id} with MLA154 EEG8')
+#     sleep_df = pd.read_csv(sleep_file_path)
+#     plot2D(dict_pca_df, sleep_df, f'MLA152 {session_id} with MLA154 EEG8')
 
 
 
