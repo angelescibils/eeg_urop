@@ -15,7 +15,7 @@ import glob
 import predict as pr
 from staging import SleepStaging
 import utils as uts 
-from PCA_functions import * 
+import PCA_functions as pcaf
 
 
 ##################################################################
@@ -31,7 +31,7 @@ all_animal_folders = [os.path.join(data_folder, a) for a in animals]
 
 ## Get features and save for all 
 for animal_folder in all_animal_folders:
-    get_animal_features(animal_folder, sampling_frequency=100, epoch_sec=2.5) 
+    pcaf.get_animal_features(animal_folder, sampling_frequency=100, epoch_sec=2.5) 
 
 
 
@@ -54,11 +54,11 @@ for animal_folder in all_animal_folders:
             eeg_feature_dict['EEG8'] = pd.read_csv(os.path.join(path_to_features, file))
 
 
-    var, ref_pca = get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=3)
+    var, ref_pca = pcaf.get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=3)
     
     ## Apply PCA to all other electrodes of the animal 
     ref_title = f'{animal_id} {first_session_id} EEG8'
-    apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=3, xlim=[-20, 30], ylim=[-30, 50])
+    pcaf.apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=3, xlim=[-20, 30], ylim=[-30, 50])
 
 ### Extract features of one animal with multiple sessions 
 ### This can be turned into a function, there is a lot of place for improvement and error detection here! 
