@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from py_console import console 
 import os
 import glob 
+import re 
 
 # From phdutils 
 import predict as pr
@@ -187,14 +188,14 @@ def apply_PCA(eeg_feature_dict, ref_pca, n_components=pca_n):
 
     return dict_pca_df
 
+
 ################## VISUALIZE PCA ################## 
 # Visualize the PCA of the EEG features 
 ## To improve
-    ## Add limits as parameters of function
     ## Add second figure with bar
     ## Add title options (mention ref electrode/animal and against who)
 
-def plot2D(dict_pca_df, sleep_df, title):
+def plot2D(dict_pca_df, sleep_df, title, xlim=[-20, 30], ylim=[-30, 50]):
     '''
     Plots PC1 vs. PC2 of each electrode 
 
@@ -227,8 +228,8 @@ def plot2D(dict_pca_df, sleep_df, title):
             axes[i, j].set_xlabel('Principal Component 1')
             axes[i, j].set_ylabel('Principal Component 2')
 
-            axes[i, j].set_xlim([-20, 30])  # Adjust the limits as needed
-            axes[i, j].set_ylim([-30, 50])  # Adjust the limits as needed
+            axes[i, j].set_xlim(xlim)  # Adjust the limits as needed
+            axes[i, j].set_ylim(ylim)  # Adjust the limits as needed
 
             
     legend_labels = {'$\\mathdefault{0}$': 'Wake','$\\mathdefault{2}$': 'NREM', '$\\mathdefault{4}$': 'REM'}
@@ -240,6 +241,47 @@ def plot2D(dict_pca_df, sleep_df, title):
     plt.tight_layout()
     plt.savefig(f'{title}_PCA.png',  dpi=300)
     plt.show()
+
+
+################## APPLY + VISUALIZE PCA ################## 
+
+def apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=pca_n, xlim=[-20, 30], ylim=[-30, 50]):
+        '''
+        '''
+        ## Getting Animal ID
+        animal_id = os.path.basename(animal_folder)
+        all_sessions_ids = os.listdir(animal_folder)
+
+        ## Looping through each session:
+        for session_id in all_sessions_ids:
+
+                # Skip over sessions that aren't sessions 
+                if session_id == 'rec' or session_id =="start": continue
+
+                # Features Folder 
+                features_folder = os.path.join(animal_folder, session_id, 'features')
+                features_files = os.listdir(features_folder)
+
+                # Hypno Predictions Folder
+                sleep_folder = os.path.join(animal_folder, session_id, 'sleep')
+                sleep_file = os.listdir(sleep_folder)[0]                        ##should be a better way to do this 
+                sleep_file_path = os.path.join(sleep_folder, sleep_file)
+                sleep_df = pd.read_csv(sleep_file_path)
+
+                # Reading Features.csv
+                features_data = dict() 
+                pattern = re.compile(r'chann-EEG\d+') ## careful with this line if name of files is changed
+                for file in features_files:
+                        match = re.search(pattern, file)
+                        if match: extracted_part = match.group(0)
+                        electrode = extracted_part 
+                        features_data[electrode] = pd.read_csv(os.path.join(features_folder, file))
+
+                dict_pca_df = apply_PCA(features_data, ref_pca, n_components)
+
+                ## Visualizing 
+                plot_title = f'{animal_id} {session_id} with ref {ref_title}'
+                plot2D(dict_pca_df, sleep_df, plot_title, xlim, ylim)
 
 
 ### THIS IS CODE FROM PREDICT.PY
