@@ -75,7 +75,7 @@ def save_features(data_dict, saving_folder, animal_id, session_id):
         console.success(f"Wrote {key} feature data to {filename}")
 
 
-def get_animal_features(animal_folder, sampling_frequency=sf, epoch_sec=eps):
+def get_animal_features(animal_folder, sampling_frequency=sf, epoch_sec=eps): 
     '''
     Assuming BIDS convention
     Create new folder called "features" where features are saved 
@@ -220,7 +220,7 @@ def plot2D(dict_pca_df, sleep_df, title, xlim=[-20, 30], ylim=[-30, 50]):
     for i in range(3):
         for j in range(3):
             electrode = f'EEG{i * 3 + j + 1}'
-            merged_df = pd.concat([dict_pca_df[electrode], sleep_df[electrode]], axis=1)
+            merged_df = pd.concat([dict_pca_df[f'chann-{electrode}'], sleep_df[electrode]], axis=1)
             
             # scatter_plot = plt.scatter(merged_df['PC1'], merged_df['PC2'], c=merged_df[electrode], cmap='viridis')
             scatter = axes[i,j].scatter(merged_df['PC1'], merged_df['PC2'], c=merged_df[electrode], alpha=0.1)
