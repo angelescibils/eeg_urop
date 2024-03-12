@@ -25,13 +25,13 @@ import PCA_functions as pcaf
 ################## INTERNAL DATA ################### 
 
 ## Comment for User: Change Directory 
-data_folder = '/Volumes/Extreme'
+data_folder = '/Volumes/Extreme SSD'
 animals = ['MLA152', 'MLA153']
 all_animal_folders = [os.path.join(data_folder, a) for a in animals]
 
 ## Get features and save for all 
-for animal_folder in all_animal_folders:
-    pcaf.get_animal_features(animal_folder, sampling_frequency=100, epoch_sec=2.5) 
+# for animal_folder in all_animal_folders:
+#     pcaf.get_animal_features(animal_folder, sampling_frequency=100, epoch_sec=2.5) 
 
 
 
@@ -39,26 +39,29 @@ for animal_folder in all_animal_folders:
 ########################### APPPLY PCA ###########################
 ##################################################################
 
-for animal_folder in all_animal_folders:
+# for animal_folder in all_animal_folders:
 
-    animal_id = os.path.basename(animal_folder)
+#     animal_id = os.path.basename(animal_folder)
 
-    ## Assuming Ref_Electrode to be EEG8 of the first session 
-    eeg_feature_dict = dict()
-    first_session_id = os.listdir(animal_folder)[0]
-    path_to_features = os.path.join(animal_folder, first_session_id, 'features')
-    feature_files = os.listdir(path_to_features)
+#     ## Assuming Ref_Electrode to be EEG8 of the first session 
+#     eeg_feature_dict = dict()
+#     first_session_id = os.listdir(animal_folder)[0]
+#     path_to_features = os.path.join(animal_folder, first_session_id, 'features')
+#     feature_files = os.listdir(path_to_features)
     
-    for file in feature_files:
-        if 'EEG8' in file:
-            eeg_feature_dict['EEG8'] = pd.read_csv(os.path.join(path_to_features, file))
+#     for file in feature_files:
+#         if 'EEG8' in file:
+#             eeg_feature_dict['EEG8'] = pd.read_csv(os.path.join(path_to_features, file))
 
 
-    var, ref_pca = pcaf.get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=3)
+#     var, ref_pca = pcaf.get_PCA(eeg_feature_dict, ref_electrode='EEG8', n_components=3)
     
-    ## Apply PCA to all other electrodes of the animal 
-    ref_title = f'{animal_id} {first_session_id} EEG8'
-    pcaf.apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=3, xlim=[-20, 30], ylim=[-30, 50])
+#     ## Apply PCA to all other electrodes of the animal 
+#     ref_title = f'{animal_id} {first_session_id} EEG8'
+#     pcaf.apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=3, xlim=[-20, 30], ylim=[-30, 50])
+
+
+######## Fixing Bar Graph Visualization 
 
 
 ##################################################################
