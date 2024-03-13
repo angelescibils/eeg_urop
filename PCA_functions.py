@@ -81,6 +81,7 @@ def get_animal_features(animal_folder, sampling_frequency=sf, epoch_sec=eps):
     Create new folder called "features" where features are saved 
     '''
     ## Getting Animal ID
+    ## consider using ut.sparse_bids_subject(string)
     animal_id = os.path.basename(animal_folder)
 
     #### When running this on my computer, I had to change the file extensions to just .csv (pandas couldn't read the .csv.gz for the eeg files, but it could for the sleep files)
@@ -89,6 +90,7 @@ def get_animal_features(animal_folder, sampling_frequency=sf, epoch_sec=eps):
 
         ## Getting Session Path & Info
         session_folder_path = os.path.dirname(os.path.dirname(eeg_file_path))
+        ## consider using uts.parse_bids_session(string: str)
         session_id = os.path.basename(session_folder_path)
 
         ## Creating Features folder
@@ -242,13 +244,113 @@ def plot2D(animal_folder, dict_pca_df, sleep_df, title, xlim=[-20, 30], ylim=[-3
     plt.savefig(f'{animal_folder}/{title}_PCA.png',  dpi=300)
     plt.show()
 
+def get_percentages(sleep_df):
+        '''
+        For each session in animal folder 
+        Assumptions:
+                *  sleep_df has EEGi for columns and predictions for rows
+                *  0: Wake, 2:REM, 4: NREM 
+        '''
 
+        # Create New DF with percentages 
+        percentage_df = pd.DataFrame(columns=['electrode', '0-Wake', '2-REM', '4-NREM'])
+
+        # Find percentages of each prediction for each EEG channel 
+        ## there is definitely an easiert / more efficient way to do this 
+        for eeg_channel in sleep_df.columns:
+                
+                interim = sleep_df[eeg_channel].value_counts(normalize=True).reset_index()
+                interim.columns = ['Prediction', 'Percentage']
+                interim['Percentage'] *= 100 # convert to percentage
+                interim = interim.sort_values(by='Prediction')
+
+                ## ADD ERROR DETECTION: what if there is a prediction missing? (i.e. no NREM predicted)
+
+                list_form = interim['Percentage'].to_list()
+                list_form.insert(0, eeg_channel)
+
+                percentage_df.loc[len(percentage_df)] = list_form 
+        
+        return percentage_df 
+
+def plot_stacked_sleep(percentage_df, title):
+
+        ## Plot Data
+        fig, ax = plt.subplots(figsize=[10,6])
+
+        percentage_df.plot(
+                        x='electrode', 
+                        kind = 'bar',
+                        stacked=True, 
+                        title=title, 
+                        colormap='viridis',
+                        ax=ax, 
+                        )
+
+        ## Add Percentage Annotations to the plot 
+        for i, (index, row) in enumerate(percentage_df.iterrows()):
+                x_position, total_height = i, 0 
+                for j, value in enumerate(row[1:]):
+                        total_height += value 
+                        text_color = 'black' if j==2 else 'white' #set NREM percentages to black 
+
+                        ax.text(
+                                x_position, 
+                                total_height -value/2,
+                                f'{value:.2f}%', 
+                                ha = 'center', va='center', 
+                                color = text_color, 
+                                fontsize=8, 
+                                fontweight='bold'
+                        )
+        ax.set_title(title, fontsize = 16, fontweight='bold')
+        ax.set_xlabel('Electrode Channel', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Percentage', fontsize=12, fontweight='bold')
+
+        return plt 
+
+def plot_all_stacked_sessions(animal_folder):
+        '''
+        For each session in animal folder, 
+        Plot a stacked bar graph of percentages of predicted sleep stage
+        Assuming BIDS convention
+        '''
+        ## Getting Animal ID
+        ## consider using ut.sparse_bids_subject(string)
+        animal_id = os.path.basename(animal_folder)
+
+        #### When running this on my computer, I had to change the file extensions to just .csv (pandas couldn't read the .csv.gz for the eeg files, but it could for the sleep files)
+        #### Assuming we're creating a new "features" folder within each session
+        for sleep_file_path in glob.glob(f'{animal_folder}/*/sleep/*.csv.gz', recursive=True):
+
+                ## Getting Session Path & Info
+                session_folder_path = os.path.dirname(os.path.dirname(sleep_file_path))
+                ## consider using uts.parse_bids_session(string: str)
+                session_id = os.path.basename(session_folder_path)
+
+        
+                ## Get Features for this session for this animal
+                sleep_df = pd.read_csv(sleep_file_path)
+
+                ## Create Bar Graph 
+                title = f'{animal_id} {session_id} Sleep Predictions'
+                percentage_df = get_percentages(sleep_df)
+                plt = plot_stacked_sleep(percentage_df, title)
+
+                ## Saving Bar Graph 
+                plot_name = f'{animal_id}_{session_id}_hypno-predictions.png'
+                saving_dir = os.path.join(session_folder_path, 'sleep', plot_name)
+                plt.savefig(saving_dir, dpi=300, bbox_inches='tight')
+                plt.show() 
+
+      
 ################## APPLY + VISUALIZE PCA ################## 
 
 def apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=pca_n, xlim=[-20, 30], ylim=[-30, 50]):
         '''
         '''
         ## Getting Animal ID
+        ## consider using ut.sparse_bids_subject(string)
         animal_id = os.path.basename(animal_folder)
         all_sessions_ids = os.listdir(animal_folder)
 
@@ -280,14 +382,33 @@ def apply_PCA_all(animal_folder, ref_title, ref_pca, n_components=pca_n, xlim=[-
                 dict_pca_df = apply_PCA(features_data, ref_pca, n_components)
 
                 ## Visualizing 
+                ## PCA 
                 plot_title = f'{animal_id} {session_id} with ref {ref_title}'
                 plot2D(animal_folder, dict_pca_df, sleep_df, plot_title, xlim, ylim)
+
+                ## Sleep Prediction PDF
+                ## Saving Bar Graph 
+                plot_name = f'{animal_id}_{session_id}_hypno-predictions.png'
+                saving_dir = os.path.join(sleep_folder, plot_name)
+                percentages_df = get_percentages(sleep_df)
+                plt = plot_stacked_sleep(percentages_df, plot_name)
+                plt.savefig(saving_dir, dpi=300, bbox_inches='tight')
+                plt.show() 
 
 
 ### THIS IS CODE FROM PREDICT.PY
 ### Idea: do something similar so that PCA is just run in same file? 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
+        ### TEST 1
+        sleep_test = '/Volumes/Extreme SSD/MLA152/2023-12-16/sleep/sub-MLA152_ses-20231216T001047_hypno_predictions_df.csv.gz'
+        test_sleep_df = pd.read_csv(sleep_test)
+        for eeg_channel in test_sleep_df.columns:
+                # print(test_sleep_df[eeg_channel].unique())
+                print(eeg_channel, test_sleep_df[eeg_channel].value_counts()[4])
+        # plt = plot_stacked_sleep(test_sleep_df, 'Testing')
+        # plt.show()
+
 #   parser = argparse.ArgumentParser()
 #   parser.add_argument("--animal_id", required=True, help="Animal ID for constructing the base path. /path_to_storage/animal_id")
 #   parser.add_argument("--date", required=True, 
