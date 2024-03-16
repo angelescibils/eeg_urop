@@ -4,6 +4,7 @@ import seaborn as sns
 from scipy.spatial.distance import euclidean, cosine
 import os
 import re
+from rlist_files import list_files
 
 def extract_electrode_name(file_name):
     # Regular expression to match the electrode name pattern
@@ -12,16 +13,14 @@ def extract_electrode_name(file_name):
         return match.group(1)  # Returns the matched group (EEG1, EEG2, etc.)
     return None  #
     
-
-
 # Define the path to the directory containing the files
 directory_path = 'data/MLA152/2023-12-11/features/'
 
 # List all the CSV files in the directory
-file_names = [f for f in os.listdir(directory_path) if f.endswith('.csv.gz')]
+file_names = list_files(directory_path, pattern = "features.csv.gz", full_names = True)
 
 # Load the datasets into a list of pandas DataFrames
-dataframes = [pd.read_csv(os.path.join(directory_path, file_name)) for file_name in file_names]
+dataframes = [pd.read_csv(file_name) for file_name in file_names]
 
 # Ensure all DataFrames are aligned by index (this step may be redundant if they are guaranteed to be aligned)
 for df in dataframes:
@@ -34,18 +33,24 @@ unique_electrodes = set(extract_electrode_name(fn) for fn in file_names)
 distances_data = {ele: {'Euclidean': [], 'Cosine': [], 'Comparison': []} for ele in unique_electrodes if ele is not None}
 
 
-# Calculate distances for each electrode against all others
+# Check that all dataframes have the same number of rows
+lengths = [len(df) for df in dataframes]
+assert all(length == lengths[0] for length in lengths), "Not all dataframes have the same length."
+
 for i in range(len(dataframes)):
     electrode_i_name = extract_electrode_name(file_names[i])
-    for j in range(len(dataframes)):
-        if i != j:
-            electrode_j_name = extract_electrode_name(file_names[j])
-            for k in range(len(dataframes[0])):
-                row_i = dataframes[i].iloc[k]
-                row_j = dataframes[j].iloc[k]
-                distances_data[electrode_i_name]['Euclidean'].append(euclidean(row_i, row_j))
-                distances_data[electrode_i_name]['Cosine'].append(cosine(row_i, row_j))
-                distances_data[electrode_i_name]['Comparison'].append(electrode_j_name)
+    for j in range(i + 1, len(dataframes)):  # Ensures no duplicate pair calculations
+        electrode_j_name = extract_electrode_name(file_names[j])
+        for k in range(len(dataframes[0])):  # This now safely assumes all dataframes have the same length
+            row_i = dataframes[i].iloc[k].to_numpy()
+            row_j = dataframes[j].iloc[k].to_numpy()
+            # Compute distances using scipy functions directly
+            euclidean_dist = euclidean(row_i, row_j)
+            cosine_dist = cosine(row_i, row_j)
+            # Store the results
+            distances_data[electrode_i_name]['Euclidean'].append(euclidean_dist)
+            distances_data[electrode_i_name]['Cosine'].append(cosine_dist)
+            distances_data[electrode_i_name]['Comparison'].append(electrode_j_name)
 
 # Plotting
 n_electrodes = len(file_names)
