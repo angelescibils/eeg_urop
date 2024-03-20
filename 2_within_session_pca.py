@@ -166,12 +166,12 @@ def within_session_pca(features_folder_path, ref_electrode, n_components):
 
     ## Create saving_folder 
     session_folder_path = os.path.dirname(features_folder_path)
-    pca_folder_path = os.path.join(session_folder_path, 'within_session_pca')
+    pca_folder_path = os.path.join(session_folder_path, 'within-session', 'pca')
     if not os.path.exists(pca_folder_path):
         os.makedirs(pca_folder_path)
 
     ## Save Files 
-    ## Design decision: for within_session_pca no need to store sleep df alongside
+    ## Design decision: for within-session/pca no need to store sleep df alongside
     save_pca(pca_dict, pca_folder_path, animal_id, session_id, ref_electrode) 
      
 
@@ -179,19 +179,19 @@ def within_session_pca(features_folder_path, ref_electrode, n_components):
 ########
 
 ## Is this last function necessary? (do within for all session in animal)
-def animal_within_session_pca(animal_folder, ref_electrode='EEG8', n_components=pca_n):
+def multiple_within_session_pca(animal_folder, ref_electrode='EEG8', n_components=pca_n):
     '''
     Run within_session_pca on all sessions within one animal
     '''
-    # print('running...')
-    for feature_file_path in glob.glob(f'{animal_folder}/*/features', recursive=True): 
-        within_session_pca(feature_file_path, ref_electrode, n_components) 
+    for feature_folder_path in glob.glob(f'{animal_folder}/*/features', recursive=True): 
+        print(f'Working with {feature_folder_path}')
+        within_session_pca(feature_folder_path, ref_electrode, n_components) 
 
 
 
 #### RUN ACTUAL FUNCTIONS 
-# animal_folder ='/Volumes/Extreme SSD/MLA152'
-# animal_within_session_pca(animal_folder)
+animal_folder ='data/MLA153'
+multiple_within_session_pca(animal_folder)
 
 # for feature_file_path in glob.glob(f'{animal_folder}/*/within_session_pca/*.csv.gz', recursive=True): 
 #     df = pd.read_csv(feature_file_path)
