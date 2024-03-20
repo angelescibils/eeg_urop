@@ -56,11 +56,11 @@ def plot_within_session(session_folder, xlim=[-20, 30], ylim=[-30, 50]):
     handles, labels = scatter.legend_elements(prop="colors", alpha=0.6)
     fig.legend(handles, [legend_labels[label] for label in labels], title='Hypno Prediction', loc='upper right')
 
-    plt.suptitle(f'{title} PCA', fontsize=16, fontweight='bold')
+    # plt.suptitle(f'PCA', fontsize=16, fontweight='bold')
 #     subtitle = f'Scatter Plot of PC1 vs PC2 with Sleep Stage Classification'
     plt.tight_layout()
     # plt.savefig(f'{animal_folder}/{title}_PCA.png',  dpi=300)
-    # plt.show()
+    plt.show()
 
 
 #### OLD VERSION
