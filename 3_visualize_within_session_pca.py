@@ -17,21 +17,28 @@ import predict as pr
 from staging import SleepStaging
 import utils as uts 
 
-#### testing 
-## t
-
 ### NEW VERSION 
 
-def plot_within_session(session_folder, xlim=[-20, 30], ylim=[-30, 50]):
+#TODO:
+# 1) list pcas from whithin-session/pca
+# 2) find sleep files session/sleep/.csv.gz
+# 3) append sleep label to PCA per electrode
 
+def get_session_pca(session_path):
     ## Get PCA dataframes
     dict_pca_df = dict()
     for pca_file in glob.glob(f"{session_folder}/within-session/pca/*.csv.gz"):
         ### test 
         pass 
 
+def get_session_sleep(session_path)
     ## Get Sleep DF
     sleep_df = pd.DataFrame() 
+
+
+
+
+def plot_within_session(session_folder, xlim=[-20, 30], ylim=[-30, 50]):
 
 
     fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(10, 8))
