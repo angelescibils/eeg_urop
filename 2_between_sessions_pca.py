@@ -67,11 +67,14 @@ def extract_session_from_path(folder_path):
     date_pattern = re.compile(r'\d{4}-\d{2}-\d{2}')
     # Search for the date in the folder name
     match = date_pattern.search(folder_path)
+    # TODO: assert match.group() can be coerced to date
     # If a date is found, return it. Otherwise, return None.
     return match.group() if match else None
 
 
 def read_sleep(session_folder):
+    # TODO: problematic if more than one session per day (e.g., recording started and stopped)
+    # The way to go about this might be to parse the full datetime
     sleep_folder = os.path.join(session_folder, "sleep")
     sleep_dict = dict()
     for file in list_files(sleep_folder, pattern = "hypno_predictions", full_names=True):
@@ -169,7 +172,7 @@ def apply_PCA(session_feature_dict, ref_pca, n_components):
 
 ################## SAVE PCA OF ALL EEG ################## 
 
-def save_pca(data_dict, saving_folder, animal_id, session_id, ref_electrode, ref_session):
+def save_pca(data_dict, saving_folder, animal_id, ref_electrode, ref_session):
     '''
     Saves the features of all EEG channels of a specific animal and session
 
@@ -181,12 +184,11 @@ def save_pca(data_dict, saving_folder, animal_id, session_id, ref_electrode, ref
     saving_folder: str
             A string (or os.path) indicating the location of where to save files (animal/session/features)
     animal_id: str 
-    session_id: str 
     '''
 
     for session, df in data_dict.items():
         # Generate a filename for each DataFrame based on its key
-        filename = uts.bids_naming(saving_folder, animal_id, session_id, f'chann-{ref_electrode}_between-pca_ref-{ref_session}.csv.gz')
+        filename = uts.bids_naming(saving_folder, animal_id, session, f'chann-{ref_electrode}_between-pca_ref-{ref_session}.csv.gz')
         df.to_csv(filename, index=False)
         console.success(f"Wrote {session} after transformed PCA data to {filename}")
 
@@ -208,12 +210,15 @@ def between_session_pca(animal_folder_path, ref_session, ref_electrode='EEG8', n
 
     ## SANITY CHECK: What to do when session recordings aren't of the same length 
     ## For this, we don't really care they are not the same length, what matters is that they have the same parameters (96) for fit_transform()
-
     
     #### SANITY CHECK: Variance ratio
+
+
     features_dict = dict()
     for session_path in all_sessions_path:
         console.info(f"Reading Features from {session_path}")
+        # TODO: This explodes if you have two feature files in one session
+        # here we are going to only bring up one electrode
         features_path = list_files(os.path.join(session_path, 'features'), pattern = ref_electrode, full_names=True)
         assert len(features_path) == 1, "Too many feature files found"
         features_dict[os.path.basename(session_path)] = pd.read_csv(features_path[0])
@@ -222,7 +227,16 @@ def between_session_pca(animal_folder_path, ref_session, ref_electrode='EEG8', n
 
     # Apply ref_pca transform to all electrodes (including ref_electrode)
     pca_dict = apply_PCA(features_dict, ref_pca, n_components)
+    
+    # get the sleep data
+    sleep_dict = dict()
+    for session_path in all_sessions_path:
+        sleep_dict.update(read_sleep(session_folder=session_path))
 
+    for session, df in pca_dict.items():
+        # update the dictionary value
+        df.loc[:, "sleep"] = sleep_dict[session][ref_electrode]
+    #return pca_dict
     # Create saving_folder 
     pca_folder_path = os.path.join(animal_folder_path, 'between-sessions', 'pca')
     if not os.path.exists(pca_folder_path):
@@ -230,7 +244,7 @@ def between_session_pca(animal_folder_path, ref_session, ref_electrode='EEG8', n
 
     # Save Files 
     # Design decision: for within_session_pca no need to store sleep df alongside
-    save_pca(pca_dict, pca_folder_path, animal_id, session_id, ref_electrode) 
+    save_pca(pca_dict, pca_folder_path, animal_id, ref_electrode, ref_session_id) 
      
 
 
@@ -246,10 +260,31 @@ base_path = 'data'
 # potential issues, if to csv.gz in one session
 # e.g., recording was stopped and needed to be restarted, keys will be repeated
 # think about maybe concat the data ?
-read_sleep("data/MLA152/2023-12-11/")
+sleep = read_sleep("data/MLA152/2023-12-11/")
 # TODO: bind this with the pca dict
 
 animal_folder = os.path.join(base_path, animal_id)
 # find the reference session
 ref_session = find_baseline_session(os.path.join(base_path, 'participants.tsv'), animal_id)
 between_session_pca(animal_folder, ref_session, ref_electrode='EEG8', n_components=3)
+
+
+
+# TODO: Turn this into a function akin to 
+# sleep.apply(yasa.hypno_int_to_str)
+state_dict = {
+    0: "Wake",
+    2: "NREM",
+    4: "REM"
+}
+
+list(map(state_dict.get, [i for i in ]))
+
+# Convention for names ?
+session_dt: "YYYYmmddTHHMMSS" # sometimes might be found as YYYY-mm-ddTHH:MM:SS
+session_id: "YYYY-mm-dd" or "day01" or "other random convention"
+session: "day01" # often used in for loops
+# Convention for for loops
+# for session_dt in all_sessions
+# for session in all_sessions
+# for session_id, whatever in enumerate(all_sessions)
