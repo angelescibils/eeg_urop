@@ -1,6 +1,8 @@
 # eeg_urop
 Repository for EEG data analysis 
 
+This research project aims to improve sleep stage classification in EEG data to better understand the relationship between sleep and hunger by addressing electrode quality issues and fine-tuning the data analysis pipeline. This involves defining and implementing electrode quality standards, investigating data misclassifications, and integrating quality control measures to enhance the overall analysis process.
+
 
 ## File structure
 
